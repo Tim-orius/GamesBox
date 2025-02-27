@@ -24,6 +24,16 @@ The instructions can also be read in the options menu -> help
 
 A classic. [Further Info](https://en.wikipedia.org/wiki/Minesweeper_(video_game))
 
+### Know ~~bugs~~ features
+
+- Sometimes less mines than set are spawned or some removed during the setup 
+  of the hint numbers
+- The scoreboard disappears after performing any click for unknown reasons
+- When images are used for display, images remain on a tile when displayed 
+  once. So far there is no logic in place to remove images from a tile (e.g. 
+  flag image when removing the flag or after a flagged tile is revealed is 
+  still present).
+
 ## Sudoku
 
 Sudoku contains a sudoku-board-*creator*. It creates a random normal sudoku 

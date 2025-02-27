@@ -55,7 +55,7 @@ class Minefield:
                     hint = np.sum(region * kernel)
                     self.field[ii][jj] = hint
 
-        self.amount_mines = np.argwhere(self.field == 9)
+        self.amount_mines = len(np.argwhere(self.field == 9))
 
     def action(self, x, y, flag):
         """Handler for action events on a field position
