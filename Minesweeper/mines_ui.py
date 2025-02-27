@@ -19,31 +19,31 @@ class MinesweeperUI:
 
         self.use_images_ui = False
 
-        self.root.bind("<Escape>", self.restart())
+        self.small_board = tk.Button(self.root,
+                                     text="Small Board\n 8 x 8 \n 10 Mines",
+                                     command=lambda: self.setup_game((8, 8), 16),
+                                     bg="#FFFFFF", borderwidth=5, anchor="center")
+        self.medium_board = tk.Button(self.root,
+                                      text="Medium Board\n 16 x 16 \n 40 Mines",
+                                      command=lambda: self.setup_game((16, 16), 16),
+                                      bg="#FFFFFF", borderwidth=5, anchor="center")
+        self.large_board = tk.Button(self.root,
+                                     text="Large Board\n 30 x 30 \n 180 Mines",
+                                     command=lambda: self.setup_game((30, 30), 20),
+                                     bg="#FFFFFF", borderwidth=5, anchor="center")
+        self.custom_board = tk.Button(self.root,
+                                      text="Custom Minefield",
+                                      command=lambda: self.custom_game(),
+                                      bg="#FFFFFF", borderwidth=5, anchor="center")
+
+        self.root.bind("<Escape>", lambda: self.restart())
+        self.init_screen()
 
     def init_screen(self):
         """Open the game options window."""
         # Create secondary (or popup) window.
-        self.init_window = tk.Toplevel()
-        self.init_window.title("Select game size")
-        self.init_window.minsize(400, 200)
-
-        self.small_board = tk.Button(self.init_window,
-                                     text="Small Board\n 8 x 8 \n 10 Mines",
-                                     command=lambda: self.setup_game((8, 8), 16),
-                                     bg="#FFFFFF", borderwidth=5, anchor="center")
-        self.medium_board = tk.Button(self.init_window,
-                                     text="Medium Board\n 16 x 16 \n 40 Mines",
-                                     command=lambda: self.setup_game((16, 16), 16),
-                                      bg="#FFFFFF", borderwidth=5, anchor="center")
-        self.large_board = tk.Button(self.init_window,
-                                     text="Large Board\n 30 x 30 \n 180 Mines",
-                                     command=lambda: self.setup_game((30, 30), 20),
-                                     bg="#FFFFFF", borderwidth=5, anchor="center")
-        self.custom_board = tk.Button(self.init_window,
-                                     text="Custom Minefield",
-                                     command=lambda: self.custom_game(),
-                                      bg="#FFFFFF", borderwidth=5, anchor="center")
+        self.root.title("Select game size")
+        self.root.geometry("400x200")
 
         self.small_board.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         self.medium_board.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
@@ -51,14 +51,18 @@ class MinesweeperUI:
         self.custom_board.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
 
     def setup_game(self, board_shape:tuple[int, int], percent_mines:int):
-        """Setup for game
+        """Setup for game logic
 
         :param board_shape: Shape of the board (height x width)
         :param amount_mines: Number of mines on the field.
         """
 
-        self.init_window.destroy()
+        self.small_board.grid_remove()
+        self.medium_board.grid_remove()
+        self.large_board.grid_remove()
+        self.custom_board.grid_remove()
 
+        self.root.title("Minesweeper")
         # Set geometry
         geometry = str(board_shape[0]*self.tile_size_px)+"x"+str(board_shape[1]*self.tile_size_px)
         self.root.geometry(geometry)
@@ -70,8 +74,26 @@ class MinesweeperUI:
         self.grid_config()
         self.ui_setup()
 
+    def grid_config(self):
+        """Set the grid configuration."""
+        self.root.grid_rowconfigure(0, weight=1)
+        # Configure rows and columns
+        for ii in range(self.minefield.field_size[0]):
+            self.root.grid_rowconfigure(ii+1, weight=1)
+        for jj in range(self.minefield.field_size[1]):
+            self.root.grid_columnconfigure(jj, weight=1)
+
     def ui_setup(self):
-        """ """
+        """Setup for the game UI"""
+        # Scoreboard
+        self.scoreboard = tk.Label(self.root,
+                                   text="Mines left: "+str(self.minefield.mines_left),
+                                   borderwidth=5,
+                                   anchor='n',
+                                   height=self.tile_size_px
+                                   )
+        #self.scoreboard.grid(row=0, columnspan=self.minefield.field_size[1], padx=5, pady=5, sticky="new")
+
         for ii in range(self.minefield.field_size[0]):
             self.frame.append([])
             for jj in range(self.minefield.field_size[1]):
@@ -86,18 +108,13 @@ class MinesweeperUI:
                 field_element.bind("<Button-1>", lambda event, x=ii, y=jj: self.click(x, y, False))
                 field_element.bind("<Button-3>", lambda event, x=ii, y=jj: self.click(x, y, True))
 
-                field_element.grid(row=ii, column=jj, padx=5, pady=5)
+                field_element.grid(row=ii+1, column=jj, padx=5, pady=5)
                 self.frame[ii].append(field_element)
 
-    def grid_config(self):
-        """Set the grid configuration."""
-        # Configure rows and columns
-        for ii in range(self.minefield.field_size[0]):
-            self.root.grid_rowconfigure(ii, weight=1)
-        for jj in range(self.minefield.field_size[1]):
-            self.root.grid_columnconfigure(jj, weight=1)
-
     def restart(self):
+        """Restart a game. Delete all currently displayed widgets and re-trigger initialisation screen."""
+        self.scoreboard.destroy()
+
         for frame_row in self.frame:
             for label in frame_row:
                 label.destroy()
@@ -106,7 +123,7 @@ class MinesweeperUI:
         self.init_screen()
 
     def custom_game(self):
-        mb.showinfo("Not implemented yet.")
+        mb.showinfo(title="404", message="Not implemented yet.")
 
     def click(self, x, y, flag:bool):
         """Handler for click event on a field position
@@ -129,6 +146,7 @@ class MinesweeperUI:
         :param reveal: If all values should be revealed (game over / finished)
         """
         print(self.minefield.field)
+        self.scoreboard.config(text="Mines left: "+str(self.minefield.mines_left))
         for xx in range(self.minefield.field_size[0]):
             for yy in range(self.minefield.field_size[1]):
                 value = self.minefield.field[xx][yy]
@@ -155,7 +173,6 @@ class MinesweeperUI:
                         value -= 100
                     else:
                         # Hints
-                        print(value)
                         value = value % 100
                         display_value = str(value)
 

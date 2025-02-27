@@ -11,6 +11,9 @@ class Minefield:
         self.field = None
         self.field_size = field_size
         self.amount_mines = max(1, int(field_size[0]*field_size[1] * percent_mines/100))
+        print(self.amount_mines)
+        self.mines_left = self.amount_mines
+
         self.setup()
 
     def setup(self):
@@ -52,6 +55,8 @@ class Minefield:
                     hint = np.sum(region * kernel)
                     self.field[ii][jj] = hint
 
+        self.amount_mines = np.argwhere(self.field == 9)
+
     def action(self, x, y, flag):
         """Handler for action events on a field position
 
@@ -72,6 +77,13 @@ class Minefield:
         :param x: X coordinate
         :param y: Y coordinate
         """
+        field_val = self.field[x][y]
+        if -10 < field_val < 0:
+            self.mines_left -= 1
+        elif 0 < field_val < 10:
+            self.mines_left += 1
+        else:
+            return
         self.field[x][y] *= -1
 
     def sweep(self, x, y):
@@ -82,7 +94,7 @@ class Minefield:
         :return: Whether a mine was hit
         """
         if self.field[x][y] == 9:
-            self.field += 100
+            self.field = np.abs(self.field) + 100
             self.field[x][y] = 99
             return True
         else:
