@@ -20,6 +20,10 @@ tkinter UI and features an AI Agent (using a greedy search algorithm).
 
 The instructions can also be read in the options menu -> help
 
+## Minesweeper
+
+A classic. [Further Info](https://en.wikipedia.org/wiki/Minesweeper_(video_game))
+
 ## Sudoku
 
 Sudoku contains a sudoku-board-*creator*. It creates a random normal sudoku 
