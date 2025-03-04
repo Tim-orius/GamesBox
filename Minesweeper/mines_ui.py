@@ -7,8 +7,15 @@ from colormapper import ColorMapper
 
 
 class MinesweeperUI:
-    def __init__(self, root):
+    def __init__(self, root, images_in_ui:bool=True):
+        """UI Element for Minesweeper game.
+
+        :param root: tkinter instance
+        :param images_in_ui: Whether to display the images in /assets/img/ for flags and mines (otherwise use "F" and "X")
+        """
         self.root = root
+        self.use_images_ui = images_in_ui
+
         self.minefield = None
         self.color_mapper = ColorMapper()
         self.frame = []
@@ -16,8 +23,6 @@ class MinesweeperUI:
         self.asset_flag = tk.PhotoImage(file="assets/img/flag.png")
         self.asset_mine = tk.PhotoImage(file="assets/img/mine.png")
         self.tile_size_px = 40
-
-        self.use_images_ui = False
 
         self.small_board = tk.Button(self.root,
                                      text="Small Board\n 8 x 8 \n 10 Mines",
@@ -232,7 +237,8 @@ class MinesweeperUI:
 
 def main():
     root = tk.Tk()
-    mines = MinesweeperUI(root)
+    # Set images_in_ui to True to use images
+    mines = MinesweeperUI(root=root, images_in_ui=False)
     root.mainloop()
 
 
