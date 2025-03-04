@@ -29,7 +29,7 @@ class Minefield:
     def spawn_mines(self):
         """ """
         spawn_positions = np.argwhere(self.field == 0)
-        selection = np.random.choice(range(len(spawn_positions)), self.amount_mines)
+        selection = np.random.choice(range(len(spawn_positions)), size=self.amount_mines, replace=False)
 
         for index in selection:
             x, y = spawn_positions[index]

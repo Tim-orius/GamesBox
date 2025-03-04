@@ -41,7 +41,7 @@ class MinesweeperUI:
                                       command=lambda: self.custom_game(),
                                       bg="#FFFFFF", borderwidth=5, anchor="center")
 
-        self.root.bind("<Escape>", lambda: self.restart())
+        self.root.bind("<Escape>", lambda event: self.restart())
         self.init_screen()
 
     def init_screen(self):
@@ -128,7 +128,56 @@ class MinesweeperUI:
         self.init_screen()
 
     def custom_game(self):
-        mb.showinfo(title="404", message="Not implemented yet.")
+        """ """
+        self.custom_game_window = tk.Toplevel()
+        self.custom_game_window.title("Custom Game")
+
+        # Create labels and entry fields
+        height_label = tk.Label(self.custom_game_window, text="Height:")
+        height_label.grid(row=0, column=0, padx=10, pady=10)
+        self.height_entry = tk.Entry(self.custom_game_window)
+        self.height_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        width_label = tk.Label(self.custom_game_window, text="Width:")
+        width_label.grid(row=1, column=0, padx=10, pady=10)
+        self.width_entry = tk.Entry(self.custom_game_window)
+        self.width_entry.grid(row=1, column=1, padx=10, pady=10)
+
+        mines_label = tk.Label(self.custom_game_window, text="Mine Percentage (0-100):")
+        mines_label.grid(row=2, column=0, padx=10, pady=10)
+        self.mines_entry = tk.Entry(self.custom_game_window)
+        self.mines_entry.grid(row=2, column=1, padx=10, pady=10)
+
+        # Create the 'Start Game' button
+        start_button = tk.Button(self.custom_game_window, text="Start Game", command=self.start_custom_game)
+        start_button.grid(row=3, columnspan=2, padx=10, pady=10)
+
+    def start_custom_game(self):
+        """ """
+        height_inp = self.height_entry.get()
+        width_inp = self.width_entry.get()
+        percent_inp = self.mines_entry.get()
+
+        if not(height_inp.isdigit() and width_inp.isdigit() and percent_inp.isdigit()):
+            mb.showerror("Invalid values", "Please input valid, whole numbers.")
+            return
+
+        height = int(height_inp)
+        width = int(width_inp)
+        percent = int(percent_inp)
+
+        if height <= 0 or width <= 0:
+            mb.showerror("Invalid size", "Height and Width must be positive integers.")
+            return
+
+        if percent < 0 or percent > 100:
+            mb.showerror("Invalid percent value", "Mine percentage must be between 0 and 100.")
+            return
+
+        self.custom_game_window.destroy()
+
+        # Set up the game with the user-defined parameters
+        self.setup_game((height, width), percent)
 
     def click(self, x, y, flag:bool):
         """Handler for click event on a field position
