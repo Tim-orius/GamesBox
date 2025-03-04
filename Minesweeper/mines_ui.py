@@ -146,52 +146,61 @@ class MinesweeperUI:
         :param reveal: If all values should be revealed (game over / finished)
         """
         print(self.minefield.field)
+        print(self.minefield.marker_field)
         self.scoreboard.config(text="Mines left: "+str(self.minefield.mines_left))
+
+        if reveal:
+            self.minefield.reveal_all()
+
         for xx in range(self.minefield.field_size[0]):
             for yy in range(self.minefield.field_size[1]):
                 value = self.minefield.field[xx][yy]
-                # Undo set flags
-                if reveal and value < 0:
-                    value *= -1
+                marker_value = self.minefield.marker_field[xx][yy]
 
-                if value < 0 or value == 109 or value == 99:
+                if marker_value < 0 or (marker_value > 0 and value > 8):
+                    # Flag or mine
                     if self.use_images_ui:
-                        img = self.retrieve_image(value)
-                        self.frame[xx][yy].config(text="", image=img, bg=self.color_mapper.get_color(value))
+                        img = self.retrieve_image(marker_value)
+                        self.frame[xx][yy].config(text="", image=img, bg=self.color_mapper.get_color(0))
                         self.frame[xx][yy].image = img
                     else:
-                        display_value = self.retrieve_text(value)
+                        display_value = self.retrieve_text(marker_value)
                         font = Font(self.root, size=16, weight="bold")
+                        self.frame[xx][yy].config(text=display_value,
+                                                  font=font,
+                                                  bg=self.color_mapper.get_color(0)
+                                                  )
+                else:
+                    # Undiscovered tile / hint tile
+                    if marker_value == 0:
+                        # Empty field / minefield, not yet swept
+                        display_value = ""
+                        value = 0
+                    else:
+                        # Hints
+                        display_value = str(value)
+
+                    font = Font(self.root, size=16, weight="bold")
+                    if self.use_images_ui:
+                        self.frame[xx][yy].config(text=display_value,
+                                                  image="",
+                                                  font=font,
+                                                  bg=self.color_mapper.get_color(value)
+                                                  )
+                        self.frame[xx][yy].image = None
+                    else:
                         self.frame[xx][yy].config(text=display_value,
                                                   font=font,
                                                   bg=self.color_mapper.get_color(value)
                                                   )
-                else:
-                    if 0 <= value < 10:
-                        # Empty field / minefield, not yet swept
-                        display_value = ""
-                        value -= 100
-                    else:
-                        # Hints
-                        value = value % 100
-                        display_value = str(value)
-
-                    font = Font(self.root, size=16, weight="bold")
-                    self.frame[xx][yy].config(text=display_value,
-                                              font=font,
-                                              bg=self.color_mapper.get_color(value)
-                                              )
 
     def retrieve_image(self, value):
         """ """
         if value < 0:
             # Flag
             return self.asset_flag.copy()
-        elif value == 109:
+        elif value > 0:
             # Reveal mine
-            return self.asset_mine.copy()
-        elif value == 99:
-            # Mine was clicked
             return self.asset_mine.copy()
         else:
             return
@@ -201,11 +210,8 @@ class MinesweeperUI:
         if value < 0:
             # Flag
             return "F"
-        elif value == 109:
+        elif value > 0:
             # Reveal mine
-            return "X"
-        elif value == 99:
-            # Mine was clicked
             return "X"
         else:
             return
