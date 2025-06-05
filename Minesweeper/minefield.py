@@ -9,9 +9,10 @@ class Minefield:
         :param percent_mines: Amount of mines in percent (0 - 100)
         """
         self.field = None
+        self.marker_field = None
+
         self.field_size = field_size
         self.amount_mines = max(1, int(field_size[0]*field_size[1] * percent_mines/100))
-        print(self.amount_mines)
         self.mines_left = self.amount_mines
 
         self.setup()
@@ -20,6 +21,7 @@ class Minefield:
         """ """
 
         self.field = np.zeros(shape=self.field_size, dtype=int)
+        self.marker_field = np.zeros(shape=self.field_size, dtype=int)
 
         self.spawn_mines()
         self.setup_hints()
@@ -27,7 +29,7 @@ class Minefield:
     def spawn_mines(self):
         """ """
         spawn_positions = np.argwhere(self.field == 0)
-        selection = np.random.choice(range(len(spawn_positions)), self.amount_mines)
+        selection = np.random.choice(range(len(spawn_positions)), size=self.amount_mines, replace=False)
 
         for index in selection:
             x, y = spawn_positions[index]
@@ -77,14 +79,14 @@ class Minefield:
         :param x: X coordinate
         :param y: Y coordinate
         """
-        field_val = self.field[x][y]
-        if -10 < field_val < 0:
-            self.mines_left -= 1
-        elif 0 < field_val < 10:
-            self.mines_left += 1
+        marker_val = self.marker_field[x][y]
+        # Markers: 0 -> hidden tile, 1 -> revealed tile, -1 -> flagged tile
+        if marker_val == 0:
+            self.marker_field[x][y] = -1
+        elif marker_val < 0:
+            self.marker_field[x][y] = 0
         else:
             return
-        self.field[x][y] *= -1
 
     def sweep(self, x, y):
         """Sweep position (x, y)
@@ -94,8 +96,8 @@ class Minefield:
         :return: Whether a mine was hit
         """
         if self.field[x][y] == 9:
-            self.field = np.abs(self.field) + 100
-            self.field[x][y] = 99
+            self.reveal_all()
+            self.marker_field[x][y] = 99
             return True
         else:
             self.sweep_field(x, y)
@@ -112,21 +114,30 @@ class Minefield:
             return
 
         value = self.field[x][y]
-        if value > 8 or value < -8:
+        marker_value = self.marker_field[x][y]
+        if value > 8 or marker_value > 0:
             return
 
-        value = abs(value) + 100
-        self.field[x][y] = value
+        self.marker_field[x][y] = 1
 
-        if value == 100:
+        if value == 0:
             for dx in [-1, 0, 1]:
                 for dy in [-1, 0, 1]:
                     if dx != 0 or dy != 0:
                         self.sweep_field(x + dx, y + dy)
 
     def check_finish(self):
-        """ """
-        not_revealed = np.argwhere((self.field >= 0) & (self.field <= 8))
-        if len(not_revealed) > 0:
-            return False
-        return True
+        """Check if the minefield has been swept completely and all mines are flagged.
+
+        :return: whether all hint-tiles have been revealed and only mines are left uncovered.
+        :rtype: bool
+        """
+        # All revealed tiles: any tile not revealed (marker < 1) and not a mine (field < 9)
+        hints_unrevealed = np.any((self.marker_field < 1) & (self.field < 9))
+
+        if not hints_unrevealed:
+            return True
+        return False
+
+    def reveal_all(self):
+        self.marker_field = np.ones_like(self.marker_field)

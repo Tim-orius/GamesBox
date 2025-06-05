@@ -7,8 +7,15 @@ from colormapper import ColorMapper
 
 
 class MinesweeperUI:
-    def __init__(self, root):
+    def __init__(self, root, images_in_ui:bool=True):
+        """UI Element for Minesweeper game.
+
+        :param root: tkinter instance
+        :param images_in_ui: Whether to display the images in /assets/img/ for flags and mines (otherwise use "F" and "X")
+        """
         self.root = root
+        self.use_images_ui = images_in_ui
+
         self.minefield = None
         self.color_mapper = ColorMapper()
         self.frame = []
@@ -16,8 +23,6 @@ class MinesweeperUI:
         self.asset_flag = tk.PhotoImage(file="assets/img/flag.png")
         self.asset_mine = tk.PhotoImage(file="assets/img/mine.png")
         self.tile_size_px = 40
-
-        self.use_images_ui = False
 
         self.small_board = tk.Button(self.root,
                                      text="Small Board\n 8 x 8 \n ~10 Mines",
@@ -36,7 +41,7 @@ class MinesweeperUI:
                                       command=lambda: self.custom_game(),
                                       bg="#FFFFFF", borderwidth=5, anchor="center")
 
-        self.root.bind("<Escape>", lambda: self.restart())
+        self.root.bind("<Escape>", lambda event: self.restart())
         self.init_screen()
 
     def init_screen(self):
@@ -123,38 +128,56 @@ class MinesweeperUI:
         self.init_screen()
 
     def custom_game(self):
-        custom_game_window = tk.Toplevel(self.root)
-        custom_game_window.title("Custom Minefield")
+        """ """
+        self.custom_game_window = tk.Toplevel()
+        self.custom_game_window.title("Custom Game")
 
-        tk.Label(custom_game_window, text="Enter width:").grid(row=0, column=0, padx=5, pady=5)
-        width_entry = tk.Entry(custom_game_window)
-        width_entry.grid(row=0, column=1, padx=5, pady=5)
+        # Create labels and entry fields
+        height_label = tk.Label(self.custom_game_window, text="Height:")
+        height_label.grid(row=0, column=0, padx=10, pady=10)
+        self.height_entry = tk.Entry(self.custom_game_window)
+        self.height_entry.grid(row=0, column=1, padx=10, pady=10)
 
-        tk.Label(custom_game_window, text="Enter height:").grid(row=1, column=0, padx=5, pady=5)
-        height_entry = tk.Entry(custom_game_window)
-        height_entry.grid(row=1, column=1, padx=5, pady=5)
+        width_label = tk.Label(self.custom_game_window, text="Width:")
+        width_label.grid(row=1, column=0, padx=10, pady=10)
+        self.width_entry = tk.Entry(self.custom_game_window)
+        self.width_entry.grid(row=1, column=1, padx=10, pady=10)
 
-        tk.Label(custom_game_window, text="Enter number of mines:").grid(row=2, column=0, padx=5, pady=5)
-        mines_entry = tk.Entry(custom_game_window)
-        mines_entry.grid(row=2, column=1, padx=5, pady=5)
+        mines_label = tk.Label(self.custom_game_window, text="Mine Percentage (0-100):")
+        mines_label.grid(row=2, column=0, padx=10, pady=10)
+        self.mines_entry = tk.Entry(self.custom_game_window)
+        self.mines_entry.grid(row=2, column=1, padx=10, pady=10)
 
-        def start_custom_game():
-            try:
-                width = int(width_entry.get())
-                height = int(height_entry.get())
-                mines = int(mines_entry.get())
+        # Create the 'Start Game' button
+        start_button = tk.Button(self.custom_game_window, text="Start Game", command=self.start_custom_game)
+        start_button.grid(row=3, columnspan=2, padx=10, pady=10)
 
-                if width <= 0 or height <= 0 or mines < 0 or mines > (width * height):
-                    mb.showerror("Error", "Invalid dimensions or number of mines.")
-                    return
+    def start_custom_game(self):
+        """ """
+        height_inp = self.height_entry.get()
+        width_inp = self.width_entry.get()
+        percent_inp = self.mines_entry.get()
 
-                custom_game_window.destroy()
-                self.setup_game((height, width), mines)
-            except ValueError:
-                mb.showerror("Error", "Please enter valid integers.")
-                self.init_screen()
+        if not(height_inp.isdigit() and width_inp.isdigit() and percent_inp.isdigit()):
+            mb.showerror("Invalid values", "Please input valid, whole numbers.")
+            return
 
-        tk.Button(custom_game_window, text="Start Game", command=start_custom_game).grid(row=3, columnspan=2, padx=5, pady=5)
+        height = int(height_inp)
+        width = int(width_inp)
+        percent = int(percent_inp)
+
+        if height <= 0 or width <= 0:
+            mb.showerror("Invalid size", "Height and Width must be positive integers.")
+            return
+
+        if percent < 0 or percent > 100:
+            mb.showerror("Invalid percent value", "Mine percentage must be between 0 and 100.")
+            return
+
+        self.custom_game_window.destroy()
+
+        # Set up the game with the user-defined parameters
+        self.setup_game((height, width), percent)
 
     def click(self, x, y, flag:bool):
         """Handler for click event on a field position
@@ -176,53 +199,60 @@ class MinesweeperUI:
 
         :param reveal: If all values should be revealed (game over / finished)
         """
-        # print(self.minefield.field)
         self.scoreboard.config(text="Mines left: "+str(self.minefield.mines_left))
+
+        if reveal:
+            self.minefield.reveal_all()
+
         for xx in range(self.minefield.field_size[0]):
             for yy in range(self.minefield.field_size[1]):
                 value = self.minefield.field[xx][yy]
-                # Undo set flags
-                if reveal and value < 0:
-                    value *= -1
+                marker_value = self.minefield.marker_field[xx][yy]
 
-                if value < 0 or value == 109 or value == 99:
+                if marker_value < 0 or (marker_value > 0 and value > 8):
+                    # Flag or mine
                     if self.use_images_ui:
-                        img = self.retrieve_image(value)
-                        self.frame[xx][yy].config(text="", image=img, bg=self.color_mapper.get_color(value))
+                        img = self.retrieve_image(marker_value)
+                        self.frame[xx][yy].config(text="", image=img, bg=self.color_mapper.get_color(0))
                         self.frame[xx][yy].image = img
                     else:
-                        display_value = self.retrieve_text(value)
+                        display_value = self.retrieve_text(marker_value)
                         font = Font(self.root, size=16, weight="bold")
+                        self.frame[xx][yy].config(text=display_value,
+                                                  font=font,
+                                                  bg=self.color_mapper.get_color(0)
+                                                  )
+                else:
+                    # Undiscovered tile / hint tile
+                    if marker_value == 0:
+                        # Empty field / minefield, not yet swept
+                        display_value = ""
+                        value = 0
+                    else:
+                        # Hints
+                        display_value = str(value)
+
+                    font = Font(self.root, size=16, weight="bold")
+                    if self.use_images_ui:
+                        self.frame[xx][yy].config(text=display_value,
+                                                  image="",
+                                                  font=font,
+                                                  bg=self.color_mapper.get_color(value)
+                                                  )
+                        self.frame[xx][yy].image = None
+                    else:
                         self.frame[xx][yy].config(text=display_value,
                                                   font=font,
                                                   bg=self.color_mapper.get_color(value)
                                                   )
-                else:
-                    if 0 <= value < 10:
-                        # Empty field / minefield, not yet swept
-                        display_value = ""
-                        value -= 100
-                    else:
-                        # Hints
-                        value = value % 100
-                        display_value = str(value)
-
-                    font = Font(self.root, size=16, weight="bold")
-                    self.frame[xx][yy].config(text=display_value,
-                                              font=font,
-                                              bg=self.color_mapper.get_color(value)
-                                              )
 
     def retrieve_image(self, value):
         """ """
         if value < 0:
             # Flag
             return self.asset_flag.copy()
-        elif value == 109:
+        elif value > 0:
             # Reveal mine
-            return self.asset_mine.copy()
-        elif value == 99:
-            # Mine was clicked
             return self.asset_mine.copy()
         else:
             return
@@ -232,11 +262,8 @@ class MinesweeperUI:
         if value < 0:
             # Flag
             return "F"
-        elif value == 109:
+        elif value > 0:
             # Reveal mine
-            return "X"
-        elif value == 99:
-            # Mine was clicked
             return "X"
         else:
             return
@@ -257,7 +284,8 @@ class MinesweeperUI:
 
 def main():
     root = tk.Tk()
-    mines = MinesweeperUI(root)
+    # Set images_in_ui to True to use images
+    mines = MinesweeperUI(root=root, images_in_ui=False)
     root.mainloop()
 
 
