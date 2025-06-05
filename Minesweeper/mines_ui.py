@@ -20,15 +20,15 @@ class MinesweeperUI:
         self.use_images_ui = False
 
         self.small_board = tk.Button(self.root,
-                                     text="Small Board\n 8 x 8 \n 10 Mines",
+                                     text="Small Board\n 8 x 8 \n ~10 Mines",
                                      command=lambda: self.setup_game((8, 8), 16),
                                      bg="#FFFFFF", borderwidth=5, anchor="center")
         self.medium_board = tk.Button(self.root,
-                                      text="Medium Board\n 16 x 16 \n 40 Mines",
+                                      text="Medium Board\n 16 x 16 \n ~40 Mines",
                                       command=lambda: self.setup_game((16, 16), 16),
                                       bg="#FFFFFF", borderwidth=5, anchor="center")
         self.large_board = tk.Button(self.root,
-                                     text="Large Board\n 30 x 30 \n 180 Mines",
+                                     text="Large Board\n 30 x 30 \n ~180 Mines",
                                      command=lambda: self.setup_game((30, 30), 20),
                                      bg="#FFFFFF", borderwidth=5, anchor="center")
         self.custom_board = tk.Button(self.root,
@@ -123,7 +123,38 @@ class MinesweeperUI:
         self.init_screen()
 
     def custom_game(self):
-        mb.showinfo(title="404", message="Not implemented yet.")
+        custom_game_window = tk.Toplevel(self.root)
+        custom_game_window.title("Custom Minefield")
+
+        tk.Label(custom_game_window, text="Enter width:").grid(row=0, column=0, padx=5, pady=5)
+        width_entry = tk.Entry(custom_game_window)
+        width_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(custom_game_window, text="Enter height:").grid(row=1, column=0, padx=5, pady=5)
+        height_entry = tk.Entry(custom_game_window)
+        height_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        tk.Label(custom_game_window, text="Enter number of mines:").grid(row=2, column=0, padx=5, pady=5)
+        mines_entry = tk.Entry(custom_game_window)
+        mines_entry.grid(row=2, column=1, padx=5, pady=5)
+
+        def start_custom_game():
+            try:
+                width = int(width_entry.get())
+                height = int(height_entry.get())
+                mines = int(mines_entry.get())
+
+                if width <= 0 or height <= 0 or mines < 0 or mines > (width * height):
+                    mb.showerror("Error", "Invalid dimensions or number of mines.")
+                    return
+
+                custom_game_window.destroy()
+                self.setup_game((height, width), mines)
+            except ValueError:
+                mb.showerror("Error", "Please enter valid integers.")
+                self.init_screen()
+
+        tk.Button(custom_game_window, text="Start Game", command=start_custom_game).grid(row=3, columnspan=2, padx=5, pady=5)
 
     def click(self, x, y, flag:bool):
         """Handler for click event on a field position
@@ -145,7 +176,7 @@ class MinesweeperUI:
 
         :param reveal: If all values should be revealed (game over / finished)
         """
-        print(self.minefield.field)
+        # print(self.minefield.field)
         self.scoreboard.config(text="Mines left: "+str(self.minefield.mines_left))
         for xx in range(self.minefield.field_size[0]):
             for yy in range(self.minefield.field_size[1]):

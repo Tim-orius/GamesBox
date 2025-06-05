@@ -1,4 +1,3 @@
-import numpy as np
 from game_grid import GameGrid
 from game_ui import GameUI
 
