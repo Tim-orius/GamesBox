@@ -2,6 +2,17 @@ from game_grid import GameGrid
 from game_ui import GameUI
 
 
+def neighbours_checker(grid):
+    equal_neighs = 0
+
+    for row in grid:
+        for jj in range(len(row)-1):
+            if row[jj] == row[jj+1]:
+                equal_neighs += 1
+
+    return equal_neighs
+
+
 class State:
     def __init__(self, grid:GameGrid, state_move:int=None, parent=None):
         """
@@ -16,20 +27,49 @@ class State:
         self.parent = parent
         self.performed_moves = parent.performed_moves.copy() if parent else []
 
+        self.move_no = 0
+        self.equal_neighbours = 0
+
         if state_move is not None: self.performed_moves.append(state_move)
 
     def move(self, direction):
         success = self.grid.move(direction)
+        self.move_no += 1
         self.update_score(success)
 
         return success
 
     def update_score(self, move_success:bool):
-        base_score = self.grid.score
+        base_score = 0
         if not move_success:
             base_score -= 100
 
-        self.score = base_score
+        base_score += self.has_equal_neighbour() * 15
+        if self.equal_neighbours < self.parent.equal_neighbours:
+            base_score += 100
+        if self.check_largest_in_corner():
+            base_score += 25
+
+        self.score = base_score * self.move_no + self.grid.score
+
+    def has_equal_neighbour(self):
+        equal_neighbours = neighbours_checker(self.grid.field) + neighbours_checker(self.grid.field.T)
+        self.equal_neighbours = equal_neighbours
+        return equal_neighbours
+
+    def check_largest_in_corner(self):
+        max_pos = None
+        max_val = 0
+
+        nn = len(self.grid.field)
+        for ii in range(nn):
+            for jj in range(nn):
+                value = self.grid.field[ii][jj]
+                if value > max_val:
+                    max_val = value
+                    max_pos = (ii, jj)
+
+        return max_pos[0] in [0, nn] and max_pos[1] in [0, nn]
 
     def copy(self, state_move:int):
         new_grid = GameGrid(self.grid.frame_size, self.grid.base_number, self.grid.percent_double_base_on_spawn)

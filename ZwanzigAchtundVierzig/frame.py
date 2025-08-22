@@ -23,7 +23,7 @@ class Frame:
         # Auto-play variables
         self.perform_auto_play = False
         self.agent = None
-        self.depth = 7
+        self.depth = 5
         self.ai_auto_play = True
 
         # Setup Game & UI

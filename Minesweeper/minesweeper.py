@@ -4,7 +4,7 @@ from mines_ui import MinesweeperUI
 
 def main():
     root = tk.Tk()
-    mines = MinesweeperUI(root)
+    mines = MinesweeperUI(root, images_in_ui=False)
     root.mainloop()
 
 
